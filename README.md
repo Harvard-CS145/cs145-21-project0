@@ -13,11 +13,21 @@
 
 We run all our programs in a virtual machine. The VM has the P4 and Mininet environment already set up for you.
 
-- **Install a virtual machine hypervisor software.** such as VirtualBox, VMWare, and KVM. You can use any of them.
-- **Download the virtual machine we prepared**. The virtual machine file can be downloaded in the following link: <https://drive.google.com/open?id=1QFy58C3Tgm0x4e_Y3nPDggY-iBey3ekT>
+For our VM, you need to install either **VirtualBox** or **VMWare**.
+
+- **Download the virtual machine we prepared**. The virtual machine file can be downloaded in the following link(s): 
+
+	- [VirtualBox image](<https://drive.google.com/open?id=1QFy58C3Tgm0x4e_Y3nPDggY-iBey3ekT>).
+
+	- [VMWare image](<https://drive.google.com/file/d/1JMAZXHpwc1WK4KqJJFHWdQLS03UmGRdT/view?usp=sharing>).
+
 - **Install the VM.** Directly use your virtual machine software to open the VM file downloaded. The username and the password of this VM are both **p4**.
   *Note*: The VM file is large. It could consume about 40G disk size in your laptop. Please reserve enough space in your disk before installing the VM.
-- **Login to the VM.** Usually it is hard to use the virtual machine directly through your hypervisor. We have installed OpenSSH server in this virtual machine so that you can use it through ssh command. You can connect to your virtual machine by typing:  `ssh p4@localhost -p 1338`
+ 
+- **Login to the VM.** Usually it is hard to use the virtual machine directly through your hypervisor. We have installed OpenSSH server in this virtual machine so that you can use it through ssh command. 
+
+	- VirtualBox: You can connect to your virtual machine by typing:  `ssh p4@localhost -p 1338`
+	- VMWare: right click on the VM in your VM library and select "Connect to SSH".
 
 ### Machine guidelines
 There are some optional tasks throughout the projects in this course which we will mark as "High-end machine only" tasks. These tasks work as expected only if the machine you are running the VM on has a processor that is equivalent to or better than an i7 with a clockrate higher than 2.8 GHz and if you have at least 8 GB of RAM. You will not be penalized in any way if you do not complete these tasks due to machine constraints. These are purely optional.
@@ -403,6 +413,7 @@ $ git add topology/p4app_circle.json
 $ git commit -m "COMMIT MESSAGE" # please use a reasonable commit message, especially if you are submitting code
 $ git push origin master # push the code to the remote github repository
 ```
+**Please write your name in `name.txt` and commit&push it.**
 
 ### Grading
 The total grade for project 0 is 100 as follows:

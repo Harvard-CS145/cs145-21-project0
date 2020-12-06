@@ -66,7 +66,7 @@ control MyIngress(inout headers hdr,
     /* define two actions, drop and forward */
     action drop() {
 
-        mark_to_drop();
+        mark_to_drop(standard_metadata);
     }
 
     /* forward action takes as input the egress_port */

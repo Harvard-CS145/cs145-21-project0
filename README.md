@@ -2,53 +2,15 @@
 
 ## Objectives
 
-* Set up the environment in your computer
 * Learn about the basic components that you will need for future projects through a toy example: Mininiet, P4 program, controller
 * Using some of the tools, write your own circle topology
 * Run example applications on your toy example and learn how to read their performance numbers
 
-## Get Started
-
-### Set up the environment
-
-We run all our programs in a virtual machine. The VM has the P4 and Mininet environment already set up for you.
-
-For our VM, you need to install either **VirtualBox** or **VMWare**.
-
-- **Download the virtual machine we prepared**. The virtual machine file can be downloaded in the following link(s): 
-
-	- [VirtualBox image](<https://drive.google.com/open?id=1QFy58C3Tgm0x4e_Y3nPDggY-iBey3ekT>).
-
-	- [VMWare image](<https://drive.google.com/file/d/1JMAZXHpwc1WK4KqJJFHWdQLS03UmGRdT/view?usp=sharing>).
-
-- **Install the VM.** Directly use your virtual machine software to open the VM file downloaded. The username and the password of this VM are both **p4**.
-  *Note*: The VM file is large. It could consume about 40G disk size in your laptop. Please reserve enough space in your disk before installing the VM.
- 
-- **Login to the VM.** Usually it is hard to use the virtual machine directly through your hypervisor. We have installed OpenSSH server in this virtual machine so that you can use it through ssh command. 
-
-	- VirtualBox: You can connect to your virtual machine by typing:  `ssh p4@localhost -p 1338`
-	- VMWare: right click on the VM in your VM library and select "Connect to SSH".
-
-### Machine guidelines
-There are some optional tasks throughout the projects in this course which we will mark as "High-end machine only" tasks. These tasks work as expected only if the machine you are running the VM on has a processor that is equivalent to or better than an i7 with a clockrate higher than 2.8 GHz and if you have at least 8 GB of RAM. You will not be penalized in any way if you do not complete these tasks due to machine constraints. These are purely optional.
-
-### Saving disk space
-As you work on your VM for extended periods of time, you might notice a disk overhead larger than the files you added to your VM. We encourage taking steps to reduce virtual disk size after completing each project in case you are on a machine that does not have a lot of disk space. You can use [this post](https://superuser.com/a/529183) as a helpful guideline for reducing your virtual disk size.
-
-### Clone Project Contents
-
-After booting your virtual machine, you need to clone this project repository in your virtual machine
-
-```
-git clone https://github.com/Harvard-CS145/projectX-YYY.git
-```
-
-where X (1-8) is the project number, and YYY is your Github username. The description and code skeletons of each minor project are in this repository. In this repository, you will finish your coding in each minor project, test your programs, and submit your codes into Github for grading.
-
-
 ## Tutorial: The line topology example
 
-To start this tutorial, please enter in the project directory
+To start this tutorial, you will first need to get the [infrastructure setup](https://github.com/minlanyu/cs145-site/blob/master/infra.md)
+
+Please enter in the project directory
 
 ```
 $ cd projectX-YYY
@@ -154,20 +116,27 @@ These applications will also be used in future projects.
 
 ### Video streaming
 
+**Start the line topology and setup the controller**
+```
+$ sudo p4run --config topology/p4app_line.json # At one terminal
+$ python controller/controller_line.py # At another terminal
+```
+
 **Start a video streaming server at host `h1`**
 ```
-$ ./apps/start_vid_server.sh h1 10.0.0.1
+$ ./apps/start_vid_server.sh h1 10.0.0.1 
 ```
 This command starts a video streaming server at host `h1`, and the IP address of `h1` is `10.0.0.1`. 
 
-**Open the graphical interface**
+**Open the terminal for host `h2` in the mininet terminal**
 ```
-$ sudo service lightdm start
+mininet> xterm h2
 ```
+You will see another terminal (xterm) popped up, which belongs to host `h2`.
 
-**Start the client**
+**Start the client for `h2` at xterm**
 
-Open the terminal in the graphical interface (Menu => System Tools => LXTerminal, or try CTRL-ALT-T). In the terminal, go to the project 0 directory, and type:
+In the terminal popped up, type:
 ```
 $ ./apps/start_vid_client.sh h2 10.0.0.1
 ```

@@ -1,10 +1,10 @@
-# Project 0: Get started with Line and Circle Topologies
+# Project 0: Get started with Mininet and Topology Configurations
 
 ## Objectives
 
-* Learn about the basic components that you will need for future projects through a toy example: Mininiet, P4 program, controller
-* Using some of the tools, write your own circle topology
-* Run example applications on your toy example and learn how to read their performance numbers
+* Get familiar with the experiment environment: Mininiet, Topology configurations, controller, etc.
+* Create your own circle topology
+* Run example applications on the simple topology and learn how to read their performance numbers
 
 ## Tutorial: The line topology example
 
@@ -16,111 +16,86 @@ Please enter in the project directory
 $ cd projectX-YYY
 ```
 
-### Create the line topology
+### Create the line topology in Mininet
 
-Let's first create the physical topology of the network in *Mininet*. The Mininet program automatically creates a virtual topology based on a *JSON configuration file*.
+Let's first create the physical topology of the network in [Mininet](http://mininet.org/). The Mininet program automatically creates a virtual topology based on a *JSON configuration file*.
 The JSON configuration file should:
 - Define hosts and switches.
 - Define the links, i.e., how hosts and switches connect with each other to form your topology.
-- Define the P4 program we want to run on the switches.
 
 As an example, we provide you with a line topology in the file `line/p4app_line.json`. 
 The line topology has three hosts ("h1", "h2" and "h3") and three switches ("s1", "s2", and "s3"). There are five links: one connecting "h1" and "s1", "h2" and "s2", "h3" and "s3", "s1" and "s2", "s2" and "s3".
 
 <img src="./figures/line_topo.png" width="500">
 
-In this configuration file `line/p4app_line.json`, you only need to focus on the following fields:
+In this configuration file `line/p4app_line.json`, `topology` includes `assignment_strategy`, `links`, `hosts`, and `switches`. The `assignment_strategy` indicates all the switches run at layer 2 (`l2`). We put the three hosts in the `hosts` subfield, and put the three switches in the `switches` subfield. We also put the five links in the `links` subfield. 
 
-- `program`, which points to the P4 program we want to apply to the switches. We set it to `p4src/l2fwd.p4` in this project.
-- `topology`, which describes the topology. In the topology field, we need to focus on `links`, `hosts`, and `switches`. As shown in the following figure, we put the three hosts in the `hosts` subfield, and put the three switches in the `switches` subfield. We also put the five links in the `links` subfield.
-
-<img src="./figures/p1_topo.png" width="650">
-
-To run the Mininet with this topology, you can input the following command
-
+**Run Mininet with the topology**
 ```
 $ sudo p4run --config topology/p4app_line.json
 ```
+You can choose different `json` files for differnet topologies.
 
-**References:** For more information about Mininet, please refer to:
-- <http://mininet.org/walkthrough/>
-- <https://github.com/mininet/mininet/wiki/Documentation>
+**Verify your topology**
+In the Mininet CLI, you can check out the nodes and links you create by running `nodes`, `links`, and `net`. 
+You can also quit your network with `exit`.
 
-### P4 program
+For more information on how to use Mininet and other useful commands you can check out the [walkthough](http://mininet.org/walkthrough/) and [Mininet documentation](https://github.com/mininet/mininet/wiki/Documentation).
 
-The P4 program is the code that specifies packet processing at switches. 
-For our toy example of the line topology, we provide the P4 Program `p4src/l2fwd.p4`. The program defines a **dmac** table which maps the destination MAC address to the output port. In this project, you do not need to edit this P4 code. In future projects, writing P4 code is a central part of your work.
+### Create networking software to run on the topology
 
-### Controller
-The controller is responsible for filling entries in the match-action tables defined by the P4 programs. The controller runs the routing algorithm, generates forwarding rules, and installs the rules into the tables at switches.
+There are two pieces of software that can control traffic in the topology. The first is a *controller program*, which is responsible of running routing algorithms, generating forwarding rules, and installing the rules into the tables at switches. The second is a *p4 program* that specifies packet processing logics at switches.  
+For the line topology, we provide the controller program at `controller/controller_line.py` and the p4 program at `p4src/l2fwd.p4`. We do not need to touch the p4 program in this project. Basically, the p4 program defines a **dmac** table which maps the destination MAC address to the output port. 
 
-We provide you with the controller file for the line topology in `controller/controller_line.py`.
-Our controller file already implemented some small functions that use the `Topology` and `SimpleSwitchAPI` objects from the **p4utils** lib. 
+Now let's delve more into the controller code. The controller implement the `route` function which installs entries in Table *dmac* to forward traffic.
+Our controller file already implemented some small functions that use the `Topology` and `SimpleSwitchAPI` objects from the [p4utils lib](https://github.com/nsg-ethz/p4-utils/blob/master/README.md). 
+At a high level, the `route` function uses `table_add` function to insert forwarding rules. 
+```
+def table_add(self, table_name, action_name, match_keys, action_params=[], prio=None):
+        "Add entry to a match table: table_add <table name> <action name> <match fields> => <action parameters> [priority]"
+```
+(You can find other functions and their definitions at [here](https://github.com/nsg-ethz/p4-utils/blob/e8a7c8421652ad9f2a8176449dff8eabf5142964/p4utils/utils/runtime_API.py#L920) if you are curious.)
 
-In this example, the main task is to implement the `route` function which installs entries in Table *dmac* to forward traffic. At a high level, the `route` function uses `table_add` function (provided by the `SimpleSwitchAPI`) to insert forwarding rules. The parameters of this function is `[table name]`, `[action]`, `[list of keys]`, and `[list of outputs]`.
+For example, 
+```
+controller.table_add("dmac", "forward", ["00:00:0a:00:00:01"], ["1"])
+```
+This line adds a rule in the `dmac` table, with the `forward` action. The rule says that if you receive a packet whose destination MAC address `dmac` is `"00:00:0a:00:00:01"`, `forward` the packet to port `"1"`.
 
-As shown in the following figure, we install forwarding rules for all three switches. For each switch, we call function `table_add` to install forwarding rules. These rules forward packets to the corresponding output port based on the destination MAC address.
-The first parameter `dmac` is the table name, and the second parameter `forward` is the action name. Both parameters are defined in the P4 program that we will talk more in later projects. The third parameter is the destination MAC address, and the last parameter is the switch output port index.
+In Mininet, by default hosts get assigned MAC addresses using the following pattern: `00:00:<IP address to hex>`. For example if h1 IP's address were `10.0.1.5` the MAC address would be: `00:00:0a:00:01:05`. The default IP address of host hX is `10.0.0.X`.
 
-<img src="./figures/controller.png" width="650">
-
-**Note:**
-
-- By default hosts get assigned MAC addresses using the following pattern: `00:00:<IP address to hex>`. For example if h1 IP's address were `10.0.1.5` the MAC address would be: `00:00:0a:00:01:05`. The default IP address of host hX is `10.0.0.X`.
-- Switch port index each host is connected to. There are several ways to figure out the port index to interface mapping. By default p4-utils add ports in the same order they are found in the links list in the p4app.json configuration file. Thus, if you write links in this order [[h1, s1], [h2, s1]], then port 1 of s1 will connect to h1, and port 2 of s1 will connect to h2. However, this basic port assignment might not hold for more complex topologies. Another way of finding out port mappings is checking the messages printed by when running the `p4run` command:
-
+To find out the port mappings for each switch, you can check the messages printed by when running the `p4run` command:
 	```
 	Switch port mapping:
 	s1:  1:h1	2:h2
 	```
 
-**References:** For more references in writing controller codes, please refer to the document <https://github.com/nsg-ethz/p4-utils/blob/master/README.md>.
-
-
-### Run the Line Topology
-
-Now we have all the components in the line topology, we can run our network with the following commands. 
-
-**Start the topology**
-```
-$ sudo p4run --config topology/p4app_line.json
-```
 **Run the controller**
 
 Start another terminal, and run
 ```
 $ python controller/controller_line.py
 ```
-**Test the connectivity**
 
-To test the connectivity between all pairs of hosts, go back to the first terminal, type
+**Verify your controller**
+If your controller installs routing rules successfully, hosts should be able to communicate with each other. 
+To test the connectivity between all pairs of hosts, go back to the first terminal (where Mininet CLI is), type
 ```
 mininet> pingall
 ```
+
 To test the connectivity between any two hosts, for example, `h1` and `h2`, type
 ```
 mininet> h1 ping h2
 ```
-**Stop the network** 
-
-To stop the command, in the first terminal, type
-```
-mininet> exit
-```
 
 ## Running Applications on your network
 
-Now that you have created your network successfully, you can run different applications on it.
-We provide you with three different types of applications: Memcached, Iperf, and video streaming.
+Now that you are running a network in your own laptop. You can run real networked applications on these hosts and let them talk to each other. 
+We provide three applications: Memcached, Iperf, and video streaming.
 These applications will also be used in future projects.
 
 ### Video streaming
-
-**Start the line topology and setup the controller**
-```
-$ sudo p4run --config topology/p4app_line.json # At one terminal
-$ python controller/controller_line.py # At another terminal
-```
 
 **Start a video streaming server at host `h1`**
 ```
@@ -199,8 +174,8 @@ In this project, your task is to build the circle topology based on the line top
 
 In this project, you need to create two and submit two files:
 
-* **Topology**: Write the JSON configuration file for the circle topology in `topology/p4app_circle.json`. You can first copy `topology/p4app_line.json`, and then modify the `topology` field within that file.
-* **Forwarding Rules**: Write forwarding rules for the circle topology in `controller/controller_circle.json`. You can first copy `controller/controller_line.py`, and then modify the `route` function to create forwarding rules.
+* **Topology**: Write the JSON configuration file for the circle topology in `topology/p4app_circle.json`. You **only** need to write your own code in places marked with a ``TODO`` (ie, the `topology` field). 
+* **Forwarding Rules**: Write forwarding rules for the circle topology in `controller/controller_circle.json`. You **only** need to write your own code in places marked with a ``TODO`` (ie, within the `route` function). 
 
 ### Testing
 

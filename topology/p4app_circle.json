@@ -23,24 +23,12 @@
     "module_name": "p4utils.mininetlib.p4net",
     "object_name": "P4Mininet"
   },
-  "topology": {
+  "topology": {/*TODO: Configure the circle topology here*/
     "assignment_strategy": "l2",
-    "links": /* TODO */,
+    "links": ,
     "hosts": {
-        "h1": {
-        },
-        "h2": {
-        },
-        "h3": {
-        }
     },
     "switches": {
-        "s1": {
-        },
-        "s2": {
-        },
-        "s3": {
-        }
     }
   }
 }

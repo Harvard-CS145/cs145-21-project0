@@ -28,19 +28,37 @@ The line topology has three hosts ("h1", "h2" and "h3") and three switches ("s1"
 
 <img src="./figures/line_topo.png" width="500">
 
-In this configuration file `line/p4app_line.json`, `topology` includes `assignment_strategy`, `links`, `hosts`, and `switches`. The `assignment_strategy` indicates all the switches run at layer 2 (`l2`). We put the three hosts in the `hosts` subfield, and put the three switches in the `switches` subfield. We also put the five links in the `links` subfield. 
+In this configuration file `line/p4app_line.json`, `topology` includes `assignment_strategy`, `links`, `hosts`, and `switches`. The `assignment_strategy` indicates all the switches run at layer 2 (`l2`). We put the three hosts in the `hosts` subfield, and put the three switches in the `switches` subfield. We also put the five links in the `links` subfield.
 
 **Run Mininet with the topology**
 ```
 $ sudo p4run --config topology/p4app_line.json
 ```
+You will see the `mininet>` prompt if the command ran successfully.
 You can choose different `json` files for differnet topologies.
 
 **Verify your topology**
-In the Mininet CLI, you can check out the nodes and links you create by running `nodes`, `links`, and `net`. 
-You can also quit your network with `exit`.
+In the Mininet CLI, you can check out the nodes and links you create by running the following commands:
+
+- `nodes`: list all the hosts and switches you just created.
+- `net`: list all the links you just created. For example,
+
+    ```
+    h1 h1-eth0:t1-eth1
+    # port 0 of host h1 and port 1 of switch t1 are connected.
+    a1 lo:  a1-eth1:t1-eth3 a1-eth2:t2-eth3 a1-eth3:c1-eth1 a1-eth4:c2-eth1
+    # port 1 of switch a1 and port 3 of switch t1 are connected
+    # port 2 of switch a1 and port 3 of switch t2 are connected
+    # port 3 of switch a1 and port 1 of switch c1 are connected
+    # port 4 of switch a1 and port 1 of switch c2 are connected
+    ```
+
+- `links`: list all the links you just created.
+- `help`: list all the supported commands.
+- `exit`: quit the Mininet CLI.
 
 For more information on how to use Mininet and other useful commands you can check out the [walkthough](http://mininet.org/walkthrough/) and [Mininet documentation](https://github.com/mininet/mininet/wiki/Documentation).
+
 
 ### Create networking software to run on the topology
 
@@ -48,13 +66,13 @@ There are two pieces of software that can control traffic in the topology. The f
 For the line topology, we provide the controller program at `controller/controller_line.py` and the p4 program at `p4src/l2fwd.p4`. We do not need to touch the p4 program in this project. Basically, the p4 program defines a **dmac** table which maps the destination MAC address to the output port. 
 
 Now let's delve more into the controller code. The controller implement the `route` function which installs entries in Table *dmac* to forward traffic.
-Our controller file already implemented some small functions that use the `Topology` and `SimpleSwitchAPI` objects from the [p4utils lib](https://github.com/nsg-ethz/p4-utils/blob/master/README.md). 
+Our controller file already implemented some small functions that use the `Topology` and `SimpleSwitchAPI` objects from the [p4utils lib](/home/p4/p4-tools/p4-utils/blob/master/README.md). 
 At a high level, the `route` function uses `table_add` function to insert forwarding rules. 
 ```
 def table_add(self, table_name, action_name, match_keys, action_params=[], prio=None):
         "Add entry to a match table: table_add <table name> <action name> <match fields> => <action parameters> [priority]"
 ```
-(You can find other functions and their definitions at [here](https://github.com/nsg-ethz/p4-utils/blob/e8a7c8421652ad9f2a8176449dff8eabf5142964/p4utils/utils/runtime_API.py#L920) if you are curious.)
+(You can find other functions and their definitions at [here](/home/p4/p4-tools/p4-utils/blob/e8a7c8421652ad9f2a8176449dff8eabf5142964/p4utils/utils/runtime_API.py#L920) if you are curious.)
 
 For example, 
 ```
@@ -65,10 +83,22 @@ This line adds a rule in the `dmac` table, with the `forward` action. The rule s
 In Mininet, by default hosts get assigned MAC addresses using the following pattern: `00:00:<IP address to hex>`. For example if h1 IP's address were `10.0.1.5` the MAC address would be: `00:00:0a:00:01:05`. The default IP address of host hX is `10.0.0.X`.
 
 To find out the port mappings for each switch, you can check the messages printed by when running the `p4run` command:
-	```
-	Switch port mapping:
-	s1:  1:h1	2:h2
-	```
+	
+```
+Switch port mapping:
+s1:  1:h1	2:h2
+```
+
+You can also find out the port mappings using the `links` CLI command in the mininet terminal:
+
+```
+mininet> links
+h1-eth0<->s1-eth1 (OK OK) 
+h2-eth0<->s2-eth1 (OK OK) 
+h3-eth0<->s3-eth1 (OK OK) 
+s1-eth2<->s2-eth2 (OK OK) 
+s2-eth3<->s3-eth2 (OK OK) 
+```
 
 **Run the controller**
 
@@ -79,15 +109,36 @@ $ python controller/controller_line.py
 
 **Verify your controller**
 If your controller installs routing rules successfully, hosts should be able to communicate with each other. 
-To test the connectivity between all pairs of hosts, go back to the first terminal (where Mininet CLI is), type
-```
-mininet> pingall
-```
+To test the connectivity between all pairs of hosts, you can run the following commands in Mininet CLI 
+- `pingall`: ping between any host pair
+If `pingall` fails, you will see prompt stopped. (ctrl + c will kill the `pingall` command).
 
-To test the connectivity between any two hosts, for example, `h1` and `h2`, type
-```
-mininet> h1 ping h2
-```
+For debugging, you can also run:
+- `h1 ping h2`: ping h2 from h1, to test the connectivity between two hosts
+- `h1 <commands>`: run a command on host h1.
+
+## Your Task: Build the Circle Topology
+
+In this project, your task is to build the circle topology in `topology/p4app_circle.json` as shown in the following figure.
+<img src="./figures/circle_topo.png" width="500">
+You **only** need to write your own code in places marked with a ``TODO`` (ie, the `topology` field). 
+
+Next, you need to write forwarding rules for the circle topology in `controller/controller_circle.json`. You **only** need to write your own code in places marked with a ``TODO`` (i.e., within the `route` function). 
+
+### Testing
+You can test your solution in the following steps:
+1. Start the topology
+	```
+	$ sudo p4run --config topology/p4app_circle.json
+	```
+2. Run the controller
+	```
+	$ python controller/controller_circle.py
+	```
+3. We provide you with a testing script in `tests/test_circle_topo.py`. Run it and your network should pass all tests.
+	```
+	$ python tests/test_circle_topo.py
+	```
 
 ## Running Applications on your network
 
@@ -120,7 +171,26 @@ Try playing the video. You should see something like this:
 
 <img src="./figures/video.png" width="600">
 
-### Memcached and Iperf.
+**Video streaming performance**
+
+If you are curious about the intricacies of video streaming, you can try testing out how the performance of the video stream changes as you increase and decrease the link bandwidth.
+You can set the link bandwidth in the topology configuration file as follows
+```
+"topology": {
+    "assignment_strategy": "l2",
+    "links": [["h1", "s1", {"bw": 1}], ["h2", "s2", {"bw": 1}], ["h3", "s3", {"bw": 1}], ["s1", "s2", {"bw": 1}], ["s2", "s3", {"bw": 1}]],
+    ...
+}
+```
+The `bw` field defines the link bandwidth, whose unit is Mbps.
+
+How does the video bitrate change over time for 100 Kbps, 1 Mbps, 2 Mbps and 4 Mbps? When is bandwidth no longer a bottleneck?
+
+### Memcached and Iperf
+
+In this course project, we mainly use two applications, Memcached and Iperf. Memcached is an in-memory key-value store system, which distributes key-value pairs across different servers. Memcached mainly has two operations: `set` and `get`. Usually the key-value pair is a very short message, and thus for each operation, the system only generates a short TCP message, which makes the TCP flow short (less than 200 Byte). For more information, please refer to [Memcached website](memcached.org). 
+
+Iperf is a measurement tool for measuring IP network bandwidth. We usually run Iperf in two servers, and let those two servers to send packets as fast as possible, so that Iperf could measure the maximum bandwidth between the two servers. As a result, Iperf generates long and persistent flows, which is in contrast with Memcached. For more information, please refer to [Iperf website](iperf.fr).
 
 **Generate request trace**
 
@@ -164,117 +234,10 @@ In files `hX_mc.log`, each line represents the request latency of one memcached 
 
 *Note*: if you are using Windows laptop, please be aware about that Windows and Linux handle newlines differently. Windows uses `\r\n` at the end of a line, while Linux uses `\n`. Therefore, please do not edit those files in your Windows host. If you want to use some text editor to edit the files in the VM through SSH or SFTP, be sure to set the correct newline symbol.
 
-## Your Task: Build the Circle Topology
-
-In this project, your task is to build the circle topology based on the line topology example we provide you. The circle topology is shown in the following figure. It has three switches and three hosts. The three switches are connected with each other in a circle rather than a line.
-
-<img src="./figures/circle_topo.png" width="500">
-
-### Coding files
-
-In this project, you need to create two and submit two files:
-
-* **Topology**: Write the JSON configuration file for the circle topology in `topology/p4app_circle.json`. You **only** need to write your own code in places marked with a ``TODO`` (ie, the `topology` field). 
-* **Forwarding Rules**: Write forwarding rules for the circle topology in `controller/controller_circle.json`. You **only** need to write your own code in places marked with a ``TODO`` (ie, within the `route` function). 
-
-### Testing
-
-Once you finish coding, you can test your solution in the following steps:
-
-1. Start the topology
-
-	```
-	$ sudo p4run --config topology/p4app_circle.json
-	```
-
-	<img src="./figures/mininet.png" width="600">
-
-   You will see the `mininet>` prompt if the command ran successfully.
-
-2. Run the controller
-
-	```
-	$ python controller/controller_circle.py
-	```
-
-	This will insert the forwarding rules into your switches. Here is what your output should look like:
-	```
-	Setting default action of dmac
-	action:              drop
-	runtime data:        
-	Setting default action of dmac
-	action:              drop
-	runtime data:        
-	Setting default action of dmac
-	action:              drop
-	runtime data:        
-	Adding entry to exact match table dmac
-	match key:           EXACT-00:00:0a:00:00:01
-	action:              forward
-	runtime data:        00:02
-	Entry has been added with handle 0
-
-	Adding entry to exact match table dmac
-	match key:           EXACT-00:00:0a:00:00:02
-	action:              forward
-	runtime data:        00:02
-	Entry has been added with handle 1
-
-	Adding entry to exact match table dmac
-	match key:           EXACT-00:00:0a:00:00:03
-	action:              forward
-	runtime data:        00:01
-	Entry has been added with handle 2
-
-	...
-	```
-	*Note*: Your output could be a little different from it according to your implementation of the `route` function.
-
-3. To test the connectivity of your network, use `pingall` on the mininet shell
-
-	```
-	mininet> pingall
-	*** Ping: testing ping reachability
-	h1 -> h2 h3
-	h2 -> h1 h3
-	h3 -> h1 h2
-	*** Results: 0% dropped (6/6 received)
-	mininet>
-	```
-
-4. We provide you with a testing script in `tests/test_circle_topo.py`. Run it, and your network should pass all tests.
-
-	```
-	$ python tests/test_circle_topo.py
-	```
-
-	If the script completes, then you pass all tests.
-
 ## Debugging and Troubleshooting
 
-### Commands Supported in Mininet
-
-- `help`: list all the supported commands.
-- `nodes`: list all the hosts and switches you just created.
-- `net`: list all the links you just created. For example,
-
-    ```
-    h1 h1-eth0:t1-eth1
-    # port 0 of host h1 and port 1 of switch t1 are connected.
-    a1 lo:  a1-eth1:t1-eth3 a1-eth2:t2-eth3 a1-eth3:c1-eth1 a1-eth4:c2-eth1
-    # port 1 of switch a1 and port 3 of switch t1 are connected
-    # port 2 of switch a1 and port 3 of switch t2 are connected
-    # port 3 of switch a1 and port 1 of switch c1 are connected
-    # port 4 of switch a1 and port 1 of switch c2 are connected
-    ```
-
-- `links`: list all the links you just created.
-- `h1 ping h2`: ping h2 from h1; you will see prompt stopped, since there is no forwarding rules on switches for sending packets from h1 to h2. (ctrl + c will kill the `ping` command).
-- `h1 <commands>`: run a command on host h1.
-- `pingall`: ping between any host pair; you will see prompt stopped, since there is no forwarding rules on switches for sending packets from h1 to h2. (ctrl + c will kill the `pingall` command).
-- `exit`: quit the Mininet CLI.
-
-### P4 Switch Logs
+Here's a brief introduction on how to read switch logs. You can also check out more debugging and troubleshooting tips [here](debug.md).
+**These debugging tips will be useful for all future projects. Please come back and revisit this in future projects**
 
 Each p4 switch provides a log file for debugging. Those files are located in the `log` directory.
 Within this directory, you can see files named `sX.log`, which indicates this file is the log file for switch `sX`.
@@ -326,19 +289,6 @@ Action entry: MyIngress.forward - 1,
 ```
 which describes how the P4 switch processes this packet.
 
-### Other Tips
-
-Here are a few debugging and troubleshooting tips that could be useful to you throughout the entire project.
-
-[Debugging and Troubleshooting](debug.md)
-
-## Extra Credit
-
-If you are curious about the intricacies of video streaming, you can try testing out how the performance of the video stream changes as you increase and decrease the throughput of links.
-
-- How does the video bitrate change over time for 100 Kbps, 1 Mbps, 2 Mbps and 4 Mbps? When is bandwidth no longer a bottleneck?
-
-
 ## Submission and Grading
 
 ### What to Submit
@@ -346,24 +296,22 @@ If you are curious about the intricacies of video streaming, you can try testing
 You are expected to submit the following files. Please make sure all files are in the root of your git branch.
 - `topology/p4app_circle.json`. This file describes the topology you build.
 - `controller/controller_circle.py`. This file contains how you insert forwarding rules into P4 switches.
-- `report/report.txt`. Please write the description of your work in `report/report.txt` file (the `report` directory locates at the root directory of project 0). The description includes:
+- `report/report.md`. Please write the description of your work in `report/report.md` file (the `report` directory locates at the root directory of project 0). The description includes:
 	- How do you write forwarding rules in the `controller/controller_circle.py` file, and why do those rules work to enable communications between each pair of hosts.
 	- After running the applications, you can get the evaluation results. Please run both applications on all hosts, i.e., on host `h1-h3`. You will get average log(latency) of memcached requests, and average log(throughput) of iperf. Write these evaluation results in this file.
 
 You are expected to use Github Classroom to submit your project. 
 After completing a file, e.g., the `topology/p4app_circle.json` file, you can submit this file by using the following commands:
 ```
-$ git add topology/p4app_circle.json
-$ git commit -m "COMMIT MESSAGE" # please use a reasonable commit message, especially if you are submitting code
+$ git commit topology/p4app_circle.json -m "COMMIT MESSAGE" # please use a reasonable commit message, especially if you are submitting code
 $ git push origin master # push the code to the remote github repository
 ```
-**Please write your name in `name.txt` and commit&push it.**
 
 ### Grading
 The total grade for project 0 is 100 as follows:
 - *40*: Pass the first three tests: topology tests
 - *40*: Pass the fourth test: connectivity test
-- *20*: for `report/report.txt` file.
+- *20*: for `report/report.md` file.
 - *10*: Extra credit
 - *deductions based on late policies*.
 

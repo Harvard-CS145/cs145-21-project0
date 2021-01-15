@@ -35,16 +35,8 @@ class RoutingController(object):
 
     # Create forwarding rules for the dmac table
     def route(self):
-        for sw_name, controller in self.controllers.items():
-            if sw_name == "s1":
-                # table_add function: create a rule in "dmac" table, the key is the dmac address
-                # the action is "forward", and the parameter is the output port id
-                # E.g., when receiving a packet to "00:00:0a:00:00:01", "forward" the packet to "1" port.
-                # TODO
-            elif sw_name == "s2":
-                # TODO
-            elif sw_name == "s3":
-                # TODO
+        #TODO: install routing rules for circle topology
+        print('ERROR: routes not installed\n')
 
     def main(self):
         self.route()

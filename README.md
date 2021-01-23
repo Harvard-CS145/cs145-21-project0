@@ -16,6 +16,8 @@ Please enter in the project directory
 $ cd projectX-YYY
 ```
 
+Run `./pull_update.sh` to pull project updates (if any). You might need to merge conflicts manually: most of the time, you just need to accept incoming changes; reach to TF if it is hard to merge. This step also applies to all subsequent projects. 
+
 ### Create the line topology in Mininet
 
 Let's first create the physical topology of the network in [Mininet](http://mininet.org/). The Mininet program automatically creates a virtual topology based on a *JSON configuration file*.

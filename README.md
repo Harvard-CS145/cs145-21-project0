@@ -65,14 +65,14 @@ For more information on how to use Mininet and other useful commands you can che
 There are two pieces of software that can control traffic in the topology. The first is a *controller program*, which is responsible of running routing algorithms, generating forwarding rules, and installing the rules into the tables at switches. The second is a *p4 program* that specifies packet processing logics at switches.  
 For the line topology, we provide the controller program at `controller/controller_line.py` and the p4 program at `p4src/l2fwd.p4`. We do not need to touch the p4 program in this project. Basically, the p4 program defines a **dmac** table which maps the destination MAC address to the output port. 
 
-Now let's delve more into the controller code. The controller implement the `route` function which installs entries in Table *dmac* to forward traffic.
-Our controller file already implemented some small functions that use the `Topology` and `SimpleSwitchAPI` objects from the [p4utils lib](/home/p4/p4-tools/p4-utils/blob/master/README.md). 
+Now let's delve more into the controller code. The controller implements the `route` function which installs entries in Table *dmac* to forward traffic.
+Our controller file already implemented some small functions that use the `Topology` and `SimpleSwitchAPI` objects from the `p4utils library` (this library locates in `/home/p4/p4-tools/p4-utils/README.md`, and you can also check the library in this [online site](https://github.com/minlanyu/cs145-site/blob/master/p4-utils/README.md)). 
 At a high level, the `route` function uses `table_add` function to insert forwarding rules. 
 ```
 def table_add(self, table_name, action_name, match_keys, action_params=[], prio=None):
         "Add entry to a match table: table_add <table name> <action name> <match fields> => <action parameters> [priority]"
 ```
-(You can find other functions and their definitions at [here](/home/p4/p4-tools/p4-utils/blob/e8a7c8421652ad9f2a8176449dff8eabf5142964/p4utils/utils/runtime_API.py#L920) if you are curious.)
+(You can find other functions and their definitions at [here](https://github.com/minlanyu/cs145-site/blob/master/p4-utils/p4utils/utils/runtime_API.py#L920), you can also check `/home/p4/p4-tools/p4-utils/p4utils/utils/runtime_API.py#L920` locally if you are curious).
 
 For example, 
 ```
@@ -121,6 +121,7 @@ For debugging, you can also run:
 
 In this project, your task is to build the circle topology in `topology/p4app_circle.json` as shown in the following figure.
 <img src="./figures/circle_topo.png" width="500">
+
 You **only** need to write your own code in places marked with a ``TODO`` (ie, the `topology` field). 
 
 Next, you need to write forwarding rules for the circle topology in `controller/controller_circle.json`. You **only** need to write your own code in places marked with a ``TODO`` (i.e., within the `route` function). 
@@ -188,9 +189,9 @@ How does the video bitrate change over time for 100 Kbps, 1 Mbps, 2 Mbps and 4 M
 
 ### Memcached and Iperf
 
-In this course project, we mainly use two applications, Memcached and Iperf. Memcached is an in-memory key-value store system, which distributes key-value pairs across different servers. Memcached mainly has two operations: `set` and `get`. Usually the key-value pair is a very short message, and thus for each operation, the system only generates a short TCP message, which makes the TCP flow short (less than 200 Byte). For more information, please refer to [Memcached website](memcached.org). 
+In this course project, we mainly use two applications, Memcached and Iperf. Memcached is an in-memory key-value store system, which distributes key-value pairs across different servers. Memcached mainly has two operations: `set` and `get`. Usually the key-value pair is a very short message, and thus for each operation, the system only generates a short TCP message, which makes the TCP flow short (less than 200 Byte). For more information, please refer to [Memcached website](http://memcached.org/). 
 
-Iperf is a measurement tool for measuring IP network bandwidth. We usually run Iperf in two servers, and let those two servers to send packets as fast as possible, so that Iperf could measure the maximum bandwidth between the two servers. As a result, Iperf generates long and persistent flows, which is in contrast with Memcached. For more information, please refer to [Iperf website](iperf.fr).
+Iperf is a measurement tool for measuring IP network bandwidth. We usually run Iperf in two servers, and let those two servers to send packets as fast as possible, so that Iperf could measure the maximum bandwidth between the two servers. As a result, Iperf generates long and persistent flows, which is in contrast with Memcached. For more information, please refer to [Iperf website](https://iperf.fr/).
 
 **Generate request trace**
 

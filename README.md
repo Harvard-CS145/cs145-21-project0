@@ -140,7 +140,7 @@ You can test your solution in the following steps:
 	```
 3. We provide you with a testing script in `tests/test_circle_topo.py`. Run it and your network should pass all tests.
 	```
-	$ python tests/test_circle_topo.py
+	$ python3 tests/test_circle_topo.py
 	```
 
 ## Running Applications on your network

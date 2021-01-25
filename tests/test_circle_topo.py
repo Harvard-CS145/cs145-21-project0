@@ -4,14 +4,14 @@ import os
 import sys
 
 from os.path import dirname, abspath
-d = dirname(dirname(abspath(__file__))) 
+d = dirname(dirname(abspath(__file__)))
 os.chdir(d)
 
 def test_circle_topology():
 	print("Testing circle topology")
 
 	print("Topology Unit Tests")
-	with open("topology/p4app_bin.json") as f:
+	with open("topology/p4app_circle.json") as f:
 		print("Unit Test 1: Link Count")
 		topo = json.load(f)
 		assert len(topo['topology']['links']) == 6
@@ -24,7 +24,7 @@ def test_circle_topology():
 		print("Unit Test 3: Host Count")
 		assert len(topo['topology']['hosts']) == 3
 		print("Test passed")
-		
+
 	print("Controller Unit Tests")
 	host_ips = []
 	hosts = []
@@ -40,7 +40,7 @@ def test_circle_topology():
 			assert (" 0% packet loss" in os.popen('mx {0} ping -c 1 {1}'.format(h, ip)).read())
 			c += 1
 			print(int(c * 100.0 / (16 * 16)),'% complete.', end='\r', flush=True)
-	
+
 	print("")
 	print("Test passed")
 

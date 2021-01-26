@@ -21,9 +21,11 @@ class IperfClient:
 			t.start()
 		for t in th:
 			t.join()
+		print '# The following numbers represent the throughput of each iperf requests from this iperf client. The unit is byte per second'
 		while not q.empty():
 			traffic,bps = q.get()
 			print bps
+			sys.stdout.flush()
 	def execute(self, traffic, q):
 		byte = 0
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

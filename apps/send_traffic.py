@@ -16,9 +16,12 @@ HOSTS=["h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8", "h9", "h10", "h11", "h12"
 MN_PATH='~/mininet'
 MN_UTIL=os.path.join(MN_PATH, 'util', 'm')
 
+LOG_DIR='logs'
+
 CmdMemcachedClient = {
-	'start': 'python memcached_client.py {start_time} {host_name} {traffic_file} > logs/{host_name}_mc.log 2>/dev/null &',
-	'kill': 'sudo pkill "python memcached_client.py" 2>/dev/null'
+	'start': 'stdbuf -o0 -e0 python apps/memcached_client.py {start_time} {host_name} {traffic_file} > {log_dir}/{host_name}_mc.log 2> {log_dir}/{host_name}_mc_error.log &',
+	# 'start': 'python apps/memcached_client.py {start_time} {host_name} {traffic_file} > logs/{host_name}_mc.log 2>/dev/null &',
+	'kill': 'sudo pkill "python apps/memcached_client.py" 2>/dev/null'
 }
 
 CmdMemcachedServer = {
@@ -27,8 +30,9 @@ CmdMemcachedServer = {
 }
 
 CmdIperfClient = {
-	'start': 'python iperf_client.py {start_time} {host_name} {traffic_file} > logs/{host_name}_iperf.log 2>/dev/null &',
-	'kill': 'sudo pkill "python iperf_client.py" 2>/dev/null'
+	'start': 'stdbuf -o0 -e0 python apps/iperf_client.py {start_time} {host_name} {traffic_file} > {log_dir}/{host_name}_iperf.log 2> {log_dir}/{host_name}_iperf_error.log &',
+	# 'start': 'python apps/iperf_client.py {start_time} {host_name} {traffic_file} > logs/{host_name}_iperf.log 2>/dev/null &',
+	'kill': 'sudo pkill "python apps/iperf_client.py" 2>/dev/null'
 }
 
 CmdIperfServer = {
@@ -58,15 +62,15 @@ class Experiment:
 			# host = "h%d"%(i+1)
 			self.run_mc_server(host)
 			self.run_iperf_server(host)
-		print "wait 1 sec for iperf and memcached servers to start"
-		time.sleep(1)
+		print "wait 5 sec for iperf and memcached servers to start"
+		time.sleep(5)
 		print "start iperf and memcached clients"
 		self.start_time = int(now) + 3
 		for host in self.hosts:
 			# host = "h%d"%(i+1)
 			self.run_mc_client(host)
 			self.run_iperf_client(host)
-		
+
 		print "wait for experiment to finish"
 		wait_util(self.start_time + self.duration)
 		print "stop everything"
@@ -76,15 +80,15 @@ class Experiment:
 			self.stop_mc_client(host)
 			self.stop_iperf_server(host)
 			self.stop_iperf_client(host)
-		print "wait 10 sec to make log flushed"
-		time.sleep(10)
+		# print "wait 60 sec to make log flushed"
+		# time.sleep(60)
 
 	def run_mc_server(self, host):
 		MnExec(host, CmdMemcachedServer["start"])
 	def stop_mc_server(self, host):
 		MnExec(host, CmdMemcachedServer["kill"])
 	def run_mc_client(self, host):
-		MnExec(host, CmdMemcachedClient["start"].format(start_time = self.start_time, host_name = host, traffic_file = self.traffic_file))
+		MnExec(host, CmdMemcachedClient["start"].format(start_time = self.start_time, host_name = host, traffic_file = self.traffic_file, log_dir = LOG_DIR))
 	def stop_mc_client(self, host):
 		MnExec(host, CmdMemcachedClient["kill"])
 	def run_iperf_server(self, host):
@@ -92,22 +96,25 @@ class Experiment:
 	def stop_iperf_server(self, host):
 		MnExec(host, CmdIperfServer["kill"])
 	def run_iperf_client(self, host):
-		MnExec(host, CmdIperfClient["start"].format(start_time = self.start_time, host_name = host, traffic_file = self.traffic_file))
+		MnExec(host, CmdIperfClient["start"].format(start_time = self.start_time, host_name = host, traffic_file = self.traffic_file, log_dir = LOG_DIR))
 	def stop_iperf_client(self, host):
 		MnExec(host, CmdIperfClient["kill"])
+
+def is_not_comment(line):
+	return len(line) > 0 and line[0] != '#'
 
 def calc_score(a, b):
         scorea = 0
         scoreb = 0
 
-        mc_latency = map(float, filter(None, commands.getoutput("cat logs/*_mc.log").split('\n')))
+        mc_latency = map(float, filter(is_not_comment, commands.getoutput("cat %s/*_mc.log" % LOG_DIR).split('\n')))
         latency_scores = map(lambda x: math.log(x, 10), mc_latency)
         if len(latency_scores) > 0:
             scoreb = sum(latency_scores) / len(latency_scores)
             print "Average latency of Memcached Requests:", sum(mc_latency) / len(mc_latency), "(us)"
             print "Average log(latency) of Memcached Requests:", sum(latency_scores) / len(latency_scores)
 
-        iperf_bps = map(float, filter(None, commands.getoutput("cat logs/*_iperf.log").split('\n')))
+        iperf_bps = map(float, filter(is_not_comment, commands.getoutput("cat %s/*_iperf.log" % LOG_DIR).split('\n')))
         bps_scores = map(lambda x: math.log(x, 10), iperf_bps)
         if len(bps_scores) > 0:
             scorea = sum(bps_scores) / len(bps_scores)
@@ -122,8 +129,8 @@ def read_score_config(score_file):
         return a,b
 
 def make_log_dir():
-        if os.path.exists('logs'): shutil.rmtree('logs')
-        os.makedirs('logs')
+        if os.path.exists(LOG_DIR): shutil.rmtree(LOG_DIR)
+        os.makedirs(LOG_DIR)
 
 def parse_hosts(host_string):
 	host_list = []
@@ -140,15 +147,18 @@ def parse_hosts(host_string):
 	return host_list
 
 if __name__ == '__main__':
-	if len(sys.argv) != 4:
-		print("usage: python evaluation.py <traffic file> <host list> <experiment time>")
+	if len(sys.argv) != 4 and len(sys.argv) != 5:
+		print("usage: python evaluation.py <traffic file> <host list> <experiment time> [log directory]")
 		print("\ttraffic file: the trace file generated using the generate_trace.py.")
 		print("\thost list: hosts involved in the trace file. If the hosts are h1, h2, h3, h5, h7, h8, you can type 1-3,5,7-8 here. No space allowed.")
-		print("\texperiment time: how long do you want to send traffic using the trace.")
+		print("\texperiment time: how long do you want to send traffic using the trace (unit: seconds).")
+		print("\tlog directory: the directory storing iperf throughput results and memcached latency results. By default it is 'logs'.")
 		exit()
 	traffic_file = sys.argv[1]
 	HOSTS = parse_hosts(sys.argv[2])
 	duration = int(sys.argv[3])
+	if len(sys.argv) == 5:
+		LOG_DIR = sys.argv[4]
 
 	a = 1
 	b = 1

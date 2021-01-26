@@ -34,8 +34,8 @@ def gen_memcached(host_list, length):
     if len(host_list) == 0:
         return
     next_req = 0
-    
-    next_req = next_req + np.random.poisson(100)
+
+    next_req = next_req + np.random.poisson(1000)
     while next_req < length:
         host = host_list[rdm.randint(0, len(host_list) - 1)]
         burst = np.random.zipf(1.5)
@@ -44,7 +44,7 @@ def gen_memcached(host_list, length):
         for i in range(1000):
             key, value = gen_memcached_trace()
             memcached_traces.append((next_req + i, host, key, value))
-        next_req = next_req + np.random.poisson(100)
+        next_req = next_req + np.random.poisson(1000)
 
 def gen_iperf(host_list, length):
     if len(host_list) == 0:
@@ -57,7 +57,7 @@ def gen_iperf(host_list, length):
         dst = host_list[rdm.randint(0, len(host_list) - 1)]
         while dst == src:
             dst = host_list[rdm.randint(0, len(host_list) - 1)]
-        burst = rdm.randint(1000, 8000)
+        burst = rdm.randint(20000, 30000)
         iperf_traces.append((next_req, src, "10.0.0.%d" % dst, burst))
         next_req = next_req + np.random.poisson(2000)
 
@@ -86,8 +86,8 @@ if __name__ == "__main__":
         print("\ttrace file name: the output trace file name.")
         exit()
 
-    mc_hosts_string = sys.argv[1]  
-    iperf_hosts_string = sys.argv[2]     
+    mc_hosts_string = sys.argv[1]
+    iperf_hosts_string = sys.argv[2]
     length = int(sys.argv[3]) * 1000
 
     mc_host_list = parse_hosts(mc_hosts_string)

@@ -10,6 +10,7 @@ class Client:
 		self.actions = actions
 		self.mc = memcache.Client(map(lambda ip: ip + ":11211", server_ip), debug=0)
 	def work(self):
+		print '# The following numbers represent the latency of each memcached requests from this memcached client. The unit is microsecond'
 		for action in self.actions:
 			latency = self.execute(action)
 			print "%.0lf"%(latency * 1e6) # us

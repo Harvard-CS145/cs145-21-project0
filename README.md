@@ -197,13 +197,11 @@ Iperf is a measurement tool for measuring IP network bandwidth. We usually run I
 
 **Generate request trace**
 
-We provide you with a trace generator which generate requests for Memcached and Iperf.
-```
-$ python ./apps/trace/generate_trace.py [hosts running memcached] [hosts running iperf] [trace length (sec)] [trace file name]
-```
+We provide you with a trace generator which generate requests for Memcached and Iperf, which is located in `apps/trace/` directory. You can check `apps/trace/README.md` for detailed instructions.
+
 For example, if you want to run Memcached on host `h1-h3`, run Iperf on host `h1` and `h3`, and generate a trace for 60 seconds, you can type:
 ```
-$ python ./apps/trace/generate_trace.py --mchost 1-3 --iperfhost 1-3 --length 60 --file ./apps/trace/results.trace
+$ python ./apps/trace/generate_trace.py --mchost=1-3 --iperfhost=1,3 --length=60 --file=./apps/trace/test.trace
 ```
 
 After generating the trace, you will find a file named `test.trace` in `apps/trace` directory. 

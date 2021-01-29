@@ -203,7 +203,7 @@ $ python ./apps/trace/generate_trace.py [hosts running memcached] [hosts running
 ```
 For example, if you want to run Memcached on host `h1-h3`, run Iperf on host `h1` and `h3`, and generate a trace for 60 seconds, you can type:
 ```
-$ python ./apps/trace/generate_trace.py 1-3 1,3 60 ./apps/trace/test.trace
+$ python ./apps/trace/generate_trace.py --mchost 1-3 --iperfhost 1-3 --length 60 --file ./apps/trace/results.trace
 ```
 
 After generating the trace, you will find a file named `test.trace` in `apps/trace` directory. 

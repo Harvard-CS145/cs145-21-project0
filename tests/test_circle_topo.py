@@ -39,7 +39,7 @@ def test_circle_topology():
 		for ip in host_ips:
 			assert (" 0% packet loss" in os.popen('mx {0} ping -c 1 {1}'.format(h, ip)).read())
 			c += 1
-			print(int(c * 100.0 / (16 * 16)),'% complete.', end='\r', flush=True)
+			print(int(c * 100.0 / (3 * 3)),'% complete.', end='\r', flush=True)
 
 	print("")
 	print("Test passed")

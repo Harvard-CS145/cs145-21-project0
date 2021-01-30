@@ -158,6 +158,8 @@ $ ./apps/start_vid_server.sh h1 10.0.0.1
 This command starts a video streaming server at host `h1`, and the IP address of `h1` is `10.0.0.1`. 
 
 **Open the terminal for host `h2` in the mininet terminal**
+
+Note that for video streaming, you need to run mininet in graphical interface. 
 ```
 mininet> xterm h2
 ```

@@ -307,7 +307,7 @@ You are expected to use Github Classroom to submit your project.
 After completing a file, e.g., the `topology/p4app_circle.json` file, you can submit this file by using the following commands:
 ```
 $ git commit topology/p4app_circle.json -m "COMMIT MESSAGE" # please use a reasonable commit message, especially if you are submitting code
-$ git push origin master # push the code to the remote github repository
+$ git push origin main # push the code to the remote github repository
 ```
 
 ### Grading

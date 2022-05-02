@@ -1,0 +1,6 @@
+{
+    "memcached_host_list": [1, 2, 3],
+    "iperf_host_list": [1, 3],
+    "length": 60,
+    "file": "apps/trace/test.trace"
+}

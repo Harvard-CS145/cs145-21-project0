@@ -13,10 +13,16 @@ To start this tutorial, you will first need to get the [infrastructure setup](ht
 Please enter in the project directory
 
 ```
-$ cd projectX-YYY
+cd projectX-YYY
 ```
 
 Run `./pull_update.sh` to pull project updates (if any). You might need to merge conflicts manually: most of the time, you just need to accept incoming changes; reach to TF if it is hard to merge. This step also applies to all subsequent projects. 
+
+### Networking terms
+
+We start by defining a few networking terms used in this project. Note that the description here is not precise but just a way for you to understand the problem. You will learn the actual meanings of the terms after a few lectures in the class. For now, you can imagine a *topology* just as a graph, where *switches* and *hosts* are nodes in the graph, and they are connected by *links*. *Hosts* are those nodes at the edge of the graph. They can generate traffic and run applications. *Switches* are internal nodes in the graph that connect *hosts* or *switches* together. *Port* indicates the end of each link at a *node*.  
+
+The job of networking is to deliver messages along a path of multiple nodes to finally reach the destination. This is a distributed process. That is, every node in the graph independently decide where to *forward* messages and together they deliver the message to the destination. To achieve this, each node will decide locally which *port* (i.e., link) to send the message based on its destination. This is called a *forwarding rule*. Your job would be program the forwarding rules. 
 
 ### Create the line topology in Mininet
 
@@ -25,16 +31,16 @@ The JSON configuration file should:
 - Define hosts and switches.
 - Define the links, i.e., how hosts and switches connect with each other to form your topology.
 
-As an example, we provide you with a line topology in the file `line/p4app_line.json`. 
+As an example, we provide you with a line topology in the file `topology/p4app_line.json`. 
 The line topology has three hosts ("h1", "h2" and "h3") and three switches ("s1", "s2", and "s3"). There are five links: one connecting "h1" and "s1", "h2" and "s2", "h3" and "s3", "s1" and "s2", "s2" and "s3".
 
 <img src="./figures/line_topo.png" width="500">
 
-In this configuration file `line/p4app_line.json`, `topology` includes `assignment_strategy`, `links`, `hosts`, and `switches`. The `assignment_strategy` indicates all the switches run at layer 2 (`l2`). We put the three hosts in the `hosts` subfield, and put the three switches in the `switches` subfield. We also put the five links in the `links` subfield.
+In this configuration file `topology/p4app_line.json`, `topology` includes `assignment_strategy`, `links`, `hosts`, and `switches`. The `assignment_strategy` indicates all the switches run at layer 2 (`l2`). We put the three hosts in the `hosts` subfield, and put the three switches in the `switches` subfield. We also put the five links in the `links` subfield.
 
 **Run Mininet with the topology**
 ```
-$ sudo p4run --config topology/p4app_line.json
+sudo p4run --config topology/p4app_line.json
 ```
 You will see the `mininet>` prompt if the command ran successfully.
 You can choose different `json` files for differnet topologies.
@@ -47,12 +53,9 @@ In the Mininet CLI, you can check out the nodes and links you create by running 
 
     ```
     h1 h1-eth0:t1-eth1
-    # port 0 of host h1 and port 1 of switch t1 are connected.
+    # h1-eth0 means port 0 of host h1. t1-eth1 means port 1 of switch t1. The two ports are connected.
     a1 lo:  a1-eth1:t1-eth3 a1-eth2:t2-eth3 a1-eth3:c1-eth1 a1-eth4:c2-eth1
-    # port 1 of switch a1 and port 3 of switch t1 are connected
-    # port 2 of switch a1 and port 3 of switch t2 are connected
-    # port 3 of switch a1 and port 1 of switch c1 are connected
-    # port 4 of switch a1 and port 1 of switch c2 are connected
+    # e.g., a1-eth1 means port1 of switch a1, which is connected to t1-eth3, i.e., the port3 of switch t1
     ```
 
 - `links`: list all the links you just created.
@@ -67,7 +70,7 @@ For more information on how to use Mininet and other useful commands you can che
 There are two pieces of software that can control traffic in the topology. The first is a *controller program*, which is responsible of running routing algorithms, generating forwarding rules, and installing the rules into the tables at switches. The second is a *p4 program* that specifies packet processing logics at switches.  
 For the line topology, we provide the controller program at `controller/controller_line.py` and the p4 program at `p4src/l2fwd.p4`. We do not need to touch the p4 program in this project. Basically, the p4 program defines a **dmac** table which maps the destination MAC address to the output port. 
 
-Now let's delve more into the controller code. The controller implements the `route` function which installs entries in Table *dmac* to forward traffic.
+Now let's delve more into the controller code. The controller implements the `route` function which installs entries in Table *dmac* to forward traffic. The table includes a group of *forwarding rules* that tell a node which *port* to send the traffic based on the destination (*MAC address*).
 Our controller file already implemented some small functions that use the `Topology` and `SimpleSwitchAPI` objects from the `p4utils library` (this library locates in `/home/p4/p4-tools/p4-utils/README.md`, and you can also check the library in this [online site](https://github.com/minlanyu/cs145-site/blob/master/p4-utils/README.md)). 
 At a high level, the `route` function uses `table_add` function to insert forwarding rules. 
 ```
@@ -91,7 +94,7 @@ Switch port mapping:
 s1:  1:h1	2:h2
 ```
 
-You can also find out the port mappings using the `links` CLI command in the mininet terminal:
+You can also find out the port mappings using the `links` or  `net` CLI commands in the mininet terminal:
 
 ```
 mininet> links
@@ -104,9 +107,9 @@ s2-eth3<->s3-eth2 (OK OK)
 
 **Run the controller**
 
-Start another terminal, and run
+You should start by setting up the topology by running the above *p4run* command. Then start *another* terminal, and run
 ```
-$ python controller/controller_line.py
+python controller/controller_line.py
 ```
 
 **Verify your controller**
@@ -132,28 +135,36 @@ Next, you need to write forwarding rules for the circle topology in `controller/
 You can test your solution in the following steps:
 1. Start the topology
 	```
-	$ sudo p4run --config topology/p4app_circle.json
+	sudo p4run --config topology/p4app_circle.json
 	```
 2. Run the controller
 	```
-	$ python controller/controller_circle.py
+	python controller/controller_circle.py
 	```
 3. We provide you with a testing script in `tests/test_circle_topo.py`. Run it and your network should pass all tests.
 	```
-	$ python3 tests/test_circle_topo.py
+	python3 tests/test_circle_topo.py
 	```
 
 ## Running Applications on your network
 
-Now that you are running a network in your own laptop. You can run real networked applications on these hosts and let them talk to each other. 
-We provide three applications: Memcached, Iperf, and video streaming.
 These applications will also be used in future projects.
+
+Although you are running a network in your laptop, you can run networked applications on the hosts as if you are running a real network. Here we introduce three applications that are representative for data center traffic: video streaming, Memcached and Iperf. The goal here is for you to get familiar with these applications so that we can use them to evaluate our network design in futurre projects.
+
+Video streaming runs a server with video files. Any client can connect to the video server to get the video streams.
+
+Memcached is an in-memory key-value store system, which distributes key-value pairs across different servers. Memcached mainly has two operations: `set` and `get`. Usually the key-value pair is a very short message, and thus for each operation, the system only generates a short TCP message, which makes the TCP flow short (less than 200 Byte). For more information, please refer to [Memcached website](http://memcached.org/). 
+
+Iperf is a measurement tool for measuring IP network bandwidth. We usually run Iperf in two servers, and let those two servers to send packets as fast as possible, so that Iperf could measure the maximum bandwidth between the two servers. For more information, please refer to [Iperf website](https://iperf.fr/).
+
+These applications are representative networked applications. Memcached represents those applications that have lots of small messages; while video streaming and iperf send long persistent flows.
 
 ### Video streaming
 
 **Start a video streaming server at host `h1`**
 ```
-$ ./apps/start_vid_server.sh h1 10.0.0.1 
+./apps/start_vid_server.sh h1 10.0.0.1 
 ```
 This command starts a video streaming server at host `h1`, and the IP address of `h1` is `10.0.0.1`. 
 
@@ -169,7 +180,7 @@ You will see another terminal (xterm) popped up, which belongs to host `h2`.
 
 In the terminal popped up, type:
 ```
-$ ./apps/start_vid_client.sh h2 10.0.0.1
+./apps/start_vid_client.sh h2 10.0.0.1
 ```
 This command opens a Chrome web browser on host `h2` which visits a video website served on `10.0.0.1`. If you ran your server on a host other than `h1`, then change `10.0.0.1` to that IP.
 Try playing the video. You should see something like this:
@@ -178,7 +189,7 @@ Try playing the video. You should see something like this:
 
 **Video streaming performance**
 
-If you are curious about the intricacies of video streaming, you can try testing out how the performance of the video stream changes as you increase and decrease the link bandwidth.
+You can try testing out how the performance of the video stream changes as you increase and decrease the link bandwidth.
 You can set the link bandwidth in the topology configuration file as follows
 ```
 "topology": {
@@ -189,21 +200,27 @@ You can set the link bandwidth in the topology configuration file as follows
 ```
 The `bw` field defines the link bandwidth, whose unit is Mbps.
 
-How does the video bitrate change over time for 100 Kbps, 1 Mbps, 2 Mbps and 4 Mbps? When is bandwidth no longer a bottleneck?
-
-### Memcached and Iperf
-
-In this course project, we mainly use two applications, Memcached and Iperf. Memcached is an in-memory key-value store system, which distributes key-value pairs across different servers. Memcached mainly has two operations: `set` and `get`. Usually the key-value pair is a very short message, and thus for each operation, the system only generates a short TCP message, which makes the TCP flow short (less than 200 Byte). For more information, please refer to [Memcached website](http://memcached.org/). 
-
-Iperf is a measurement tool for measuring IP network bandwidth. We usually run Iperf in two servers, and let those two servers to send packets as fast as possible, so that Iperf could measure the maximum bandwidth between the two servers. As a result, Iperf generates long and persistent flows, which is in contrast with Memcached. For more information, please refer to [Iperf website](https://iperf.fr/).
+How does the video bitrate change over time for 100 Kbps, 1 Mbps, 2 Mbps and 4 Mbps? When do you start to see the video quality drop?
 
 **Generate request trace**
 
 We provide you with a trace generator which generate requests for Memcached and Iperf, which is located in `apps/trace/` directory. You can check `apps/trace/README.md` for detailed instructions.
 
-For example, if you want to run Memcached on host `h1-h3`, run Iperf on host `h1` and `h3`, and generate a trace for 60 seconds, you can type:
+For example, if you want to run Memcached on host `h1-h3`, run Iperf on host `h1` and `h3`, and generate a trace for 60 seconds, you can first edit apps/trace/trace.json:
+
 ```
-$ python ./apps/trace/generate_trace.py --mchost=1-3 --iperfhost=1,3 --length=60 --file=./apps/trace/test.trace
+{
+    "memcached_host_list": [1, 2, 3],
+    "iperf_host_list": [1, 3],
+    "length": 60,
+    "file": "apps/trace/test.trace"
+}
+```
+
+And then type:
+
+```
+python ./apps/trace/generate_trace.py
 ```
 
 After generating the trace, you will find a file named `test.trace` in `apps/trace` directory. 
@@ -212,7 +229,7 @@ After generating the trace, you will find a file named `test.trace` in `apps/tra
 
 We provide you with an easy script to run Memcached and Iperf servers and clients on hosts:
 ```
-$ sudo python ./apps/send_traffic.py ./apps/trace/test.trace 1-3 60
+sudo python ./apps/send_traffic.py --trace ./apps/trace/test.trace --host 1-3 --length 60
 ```
 Then you will run your applications for 60 seconds. After finishing running, you will get the results, including the latency of memcached requests and the throughput of iperf requests.
 ```
@@ -306,8 +323,8 @@ You are expected to submit the following files. Please make sure all files are i
 You are expected to use Github Classroom to submit your project. 
 After completing a file, e.g., the `topology/p4app_circle.json` file, you can submit this file by using the following commands:
 ```
-$ git commit topology/p4app_circle.json -m "COMMIT MESSAGE" # please use a reasonable commit message, especially if you are submitting code
-$ git push origin main # push the code to the remote github repository
+git commit topology/p4app_circle.json -m "COMMIT MESSAGE" # please use a reasonable commit message, especially if you are submitting code
+git push origin main # push the code to the remote github repository
 ```
 
 ### Grading
